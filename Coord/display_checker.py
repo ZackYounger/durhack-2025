@@ -10,26 +10,6 @@ import platform
 
 
 
-def get_pixels_per_cm():
-    if platform.system().lower() == "darwin":
-        from AppKit import NSScreen
-        for screen in enumerate(NSScreen.screens(), 1):
-            description = screen.deviceDescription()
-        from AppKit import NSDeviceResolution
-        rx, ry = description[NSDeviceResolution].sizeValue()
-        print(rx, ry)
-        return int(round(rx / 2.54))
-    try:
-        from PyQt5.QtWidgets import QApplication
-        app = QApplication(sys.argv)
-        screen = app.screens()[0]
-        dpi = screen.physicalDotsPerInch()
-        app.quit()
-        print(max(1, int(round(dpi / 2.54))))
-        return max(1, int(round(dpi / 2.54)))
-    except Exception:
-        # fallback: assume 96 dpi
-        return int(round(96.0 / 2.54))
 
 def parse_color(s):
     if not s:
@@ -48,6 +28,7 @@ def parse_color(s):
         return pygame.Color('black')
 
 def main(colour_input="000000"):
+    ppcm = int(input("Enter dpi:   "))
     parser = argparse.ArgumentParser(description="1 cm checkerboard with colored border (Pygame).")
     parser.add_argument("--color", "-c", help="Border and one checker color (name or #RRGGBB). If omitted you'll be prompted.")
     args = parser.parse_args()
@@ -75,7 +56,6 @@ def main(colour_input="000000"):
     chosen_color = parse_color(colour_input)
     white = pygame.Color(255, 255, 255)
 
-    ppcm = get_pixels_per_cm()
     print(ppcm)
     border_px = ppcm
     square = ppcm

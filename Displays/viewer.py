@@ -37,14 +37,17 @@ def run_viewer(host: str, port: int, title: str = "StreamGame Viewer") -> None:
                 running = False
 
         try:
+            # retrieve the header and raw byte data
             header = _recv_exact(sock, _HEADER_SIZE)
             w, h, payload_len = struct.unpack(_HEADER_FMT, header)
             payload = _recv_exact(sock, payload_len)
             raw = zlib.decompress(payload)
+
         except Exception:
             break
 
         try:
+            # convert to img for displaying
             frame = pygame.image.frombuffer(raw, (w, h), "RGB")
         except Exception:
             frame = pygame.image.fromstring(raw, (w, h), "RGB")
@@ -53,11 +56,14 @@ def run_viewer(host: str, port: int, title: str = "StreamGame Viewer") -> None:
             screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
             first_size = False
 
+
+        # keep gameplay proportional to resizing
         win_w, win_h = screen.get_size()
         scale = min(win_w / w, win_h / h)
         disp_w, disp_h = max(1, int(w * scale)), max(1, int(h * scale))
         scaled = pygame.transform.smoothscale(frame, (disp_w, disp_h))
 
+        # display the game
         screen.fill((10, 10, 12))
         screen.blit(scaled, ((win_w - disp_w) // 2, (win_h - disp_h) // 2))
         pygame.display.flip()
