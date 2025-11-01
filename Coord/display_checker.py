@@ -1,19 +1,24 @@
 import sys
 import re
-import ctypes
 import argparse
 import math
 import pygame
 
 # state for fullscreen toggle
 is_fullscreen = True
-
-_redraw_after_id = None
-from ctypes import windll
+import platform
 
 
 
 def get_pixels_per_cm():
+    if platform.system().lower() == "darwin":
+        from AppKit import NSScreen
+        for screen in enumerate(NSScreen.screens(), 1):
+            description = screen.deviceDescription()
+        from AppKit import NSDeviceResolution
+        rx, ry = description[NSDeviceResolution].sizeValue()
+        print(rx, ry)
+        return int(round(rx / 2.54))
     try:
         from PyQt5.QtWidgets import QApplication
         app = QApplication(sys.argv)
