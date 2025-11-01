@@ -3,6 +3,9 @@ import sys
 import socket
 from button import Button
 
+import time
+from stream_game import StreamGame
+
 pygame.init()
 
 # ---------- Screen / Fullscreen helper ----------
@@ -16,6 +19,9 @@ def _get_screen():
 screen = _get_screen()
 WIDTH, HEIGHT = screen.get_size()
 pygame.display.set_caption("Lobby")
+
+
+streamer: StreamGame | None = None
 
 # ---------- Fonts & Colours ----------
 TITLE_FONT = pygame.font.SysFont(None, 80)
@@ -33,7 +39,7 @@ ADD_BTN_W, ADD_BTN_H = 260, 70
 START_BTN_W, START_BTN_H = 220, 70
 
 # ---------- Networking ----------
-DEFAULT_PORT = 5000
+DEFAULT_PORT = 9999
 
 def _get_local_ip():
     ip = "0.0.0.0"
@@ -109,14 +115,20 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
     - Returns "start" when Start is clicked.
     - Returns "back" when ESC is pressed.
     """
+    global streamer
+
     host_ip = _get_local_ip()
     host_port = port
+
+    if streamer is None:
+        streamer = StreamGame(host=host_ip, port=host_port, max_clients=3, target_fps=60)
+        streamer.start_server()
 
     # Buttons
     add_player_btn = Button(
         text="Add Player",
         x=MARGIN,
-        y=int(HEIGHT * 0.3),          # “top-left-middle” area
+        y=int(HEIGHT * 0.3),
         width=ADD_BTN_W,
         height=ADD_BTN_H,
         font=BUTTON_FONT,
@@ -164,6 +176,8 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
 
             # Esc → back to main menu
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if streamer:
+                    streamer.stop_server()
                 return "back"
 
             # Buttons
@@ -174,8 +188,12 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
                     awaiting_controller = False
 
             if start_btn.is_clicked(event):
-                # You can add validation (e.g., require >=1 player) if needed
+                print("start button is clicked")
+                # Stop lobby stream so game.py can take over the same port
+                if streamer:
+                    streamer.stop_server()
                 return "start"
+
 
             # Controller hotplug
             if event.type == pygame.JOYDEVICEADDED:
@@ -196,6 +214,10 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
                     # Keep labels stable; do not renumber existing players.
 
         _draw_lobby(host_ip, host_port, add_player_btn, start_btn, players, awaiting_controller)
+
+        if streamer:
+            streamer.stream_surface(screen)
+        
         clock.tick(60)
 
 # Standalone test
