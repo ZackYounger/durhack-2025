@@ -8,7 +8,17 @@ class Level:
         self.ideal_block_width = 4
 
 
-    def create_new_level(self, world_size, ):
+    def create_new_level(self, screens):
+
+        # get bounding box of all screens
+        min_x = min(screen.left for screen in screens)
+        max_x = max(screen.right for screen in screens)
+        min_y = min(screen.top for screen in screens)
+        max_y = max(screen.bottom for screen in screens)
+
+        # world size + padding
+        world_size = (max_x - min_x + self.ideal_block_width * 2,
+                      max_y - min_y + self.ideal_block_width * 2)
 
         num_blocks_wide = world_size[0] // self.ideal_block_width
         num_blocks_tall = world_size[1] // self.ideal_block_width
