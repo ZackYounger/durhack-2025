@@ -27,6 +27,8 @@ class Level:
 
         self.level = [[None for _ in range(num_blocks_wide)] for _ in range(num_blocks_tall)]
 
+        #first do border
+
         # for r in range(num_blocks_tall):
         #     for c in range(num_blocks_wide):
         #         if r > 30 or c > 50:

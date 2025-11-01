@@ -116,4 +116,4 @@ def main(colour_input="000000"):
     pygame.quit()
 
 if __name__ == "__main__":
-    main("0000FF")
+    main("ff0000")
