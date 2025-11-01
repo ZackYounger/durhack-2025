@@ -13,6 +13,7 @@ _HEADER_FMT = "!III"   # width, height, payload_len (u32, network byte order)
 _HEADER_SIZE = struct.calcsize(_HEADER_FMT)
 
 class StreamGame:
+
     """
     Stream Pygame surfaces (frames) to multiple TCP clients.
 
@@ -106,15 +107,24 @@ class StreamGame:
 
     # ---- streaming ----
     def stream_surface(self, surface: "pygame.Surface") -> None:
+
+        # control the rate of streaming
         now = time.time()
         if now - self._last_sent_time < self._min_frame_interval:
             return
         self._last_sent_time = now
 
+
+        # extract pygame surface
         w, h = surface.get_size()
+        #24 bit rgb format
         rgb_surface = surface.convert(24)
+
+        # [R,G,B][R,G,B]    
         raw_bytes = pygame.image.tostring(rgb_surface, "RGB")
+        # compress (lvl 3 - good balance between speed and size)
         payload = zlib.compress(raw_bytes, level=3)
+
 
         header = struct.pack(_HEADER_FMT, w, h, len(payload))
         packet = header + payload
