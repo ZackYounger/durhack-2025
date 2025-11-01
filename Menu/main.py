@@ -75,6 +75,7 @@ def main():
                     init_display_fullscreen()
                 except Exception as e:
                     print("Error")
+                
                 continue
 
             elif result == "back":
@@ -85,16 +86,29 @@ def main():
         elif choice == "join":
             result = join_menu_loop()
             if result == "back":
-                # Back to main menu
                 continue
+
             if isinstance(result, tuple) and result and result[0] == "connect":
                 _, ip, port = result
-                # TODO: Start your client connection here
+                print("[Main] Launching viewer fullscreen…", flush=True)
+
+                try:
+                    pygame.display.quit()
+                except Exception as e:
+                    print(f"[Main] display.quit error: {e}", flush=True)
+
                 proc = run_subprocess("viewer.py", "--host", ip, "--port", port)
-                print(f"[Join] Started viewer.py (PID {proc.pid}) for {ip}:{port}.")
-                # After attempting connection, you can go to gameplay or back to main:
-                # run_placeholder_gameplay(screen, clock)
+                if proc:
+                    print(f"[Join] Started viewer.py (PID {proc.pid}) for {ip}:{port}.", flush=True)
+                else:
+                    print("[Join] Failed to start viewer.py", flush=True)
+
+                # proc.wait()
+                # pygame.display.init()
+                # init_display_fullscreen()
+
                 continue
+
 
         # Safety: cap loop tick
         clock.tick(60)
