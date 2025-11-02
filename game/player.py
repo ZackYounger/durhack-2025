@@ -264,7 +264,7 @@ class Player:
                 self.vel[1] = 0
 
     def draw(self, screen):
-        self._draw_fallback_rectangle(screen)
+        pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 1)  # Draw hitbox for debugging
         # Try to use sprite, fallback to colored rectangle
         player_sprite = self._get_player_sprite()
         

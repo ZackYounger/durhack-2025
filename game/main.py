@@ -242,6 +242,7 @@ def game_loop(screen, is_streaming=False, controllers={}):
         level.draw(level_surface)
         player_instance.update(tick, keys, gravity)
         player_instance.draw(level_surface)
+        pygame.draw.rect(level_surface, (255, 255, 0), player_instance.hitbox, 2)
 
         for colour, rect in zip(colours, screen_rects):
             extracted_surface = level_surface.subsurface(rect)
