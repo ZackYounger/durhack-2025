@@ -5,14 +5,14 @@ import matplotlib.pyplot as plt
 from dspace import compute_board_pose
 
 # Read image from file path
-image_path = "img3 - edit.jpg"  # Change this to your image path
+image_path = "a.jpg"  # Change this to your image path
 image = cv2.imread(image_path)
 
 # Convert to NumPy array (cv2.imread already returns a NumPy array)
 image_array = np.array(image)
 
 matrix_size = 47
-n = 50
+n = 150
 h, w, _ = image_array.shape
 # Create an output image initialized to black
 output_image = np.zeros((3, h, w, _), dtype=image_array.dtype)
@@ -69,22 +69,25 @@ def find_real_corners(corners, shape, colour):
 
     down_line = np.zeros((shape[0], 2))
     up_line = np.zeros((shape[0], 2))
+    
     print(inv_rgb[0])
     for column in range(round(len(corners_)*0.35), int(len(corners_)*0.65), shape[1]):
         end = False
         x, y = corners_[column]
+        upflag = False
+        downflag = False
         while not end and y >= 0:
-            pxl = np.average(inv_rgb[inv_rgb[max(0, y-5):min(inv_rgb.shape[0], y+5)], max(0, x-100):min(inv_rgb.shape[1], x+100), colour])
-            print(max(0, y-1),min(inv_rgb.shape[0], y+1), max(0, x-100),min(inv_rgb.shape[1], x+100), pxl)
-            if pxl < 150:
+            pxl = np.average(inv_rgb[y, max(0, x-50):min(inv_rgb.shape[1], x+50), colour]) - np.average(inv_rgb[y, max(0, x-100):min(inv_rgb.shape[1], x+50), (colour+1)%3]) - np.average(inv_rgb[y, max(0, x-50):min(inv_rgb.shape[1], x+50), (colour+2)%3])
+            if pxl > 120:
                 up_line[column//shape[1]] = np.array([x,y])
                 end = True
             y-=1
         x, y = corners_[row]
         end = False
         while not end and y < inv_rgb.shape[0]:
-            pxl = np.average(inv_rgb[inv_rgb[max(0, y-5):min(inv_rgb.shape[0], y+5)], max(0, x-50):min(inv_rgb.shape[1], x+50), colour])
-            if pxl < 150:
+            pxl = np.average(inv_rgb[y, max(0, x-100):min(inv_rgb.shape[1], x+100), colour]) - np.average(inv_rgb[y, max(0, x-100):min(inv_rgb.shape[1], x+100), (colour+1)%3]) - np.average(inv_rgb[y, max(0, x-100):min(inv_rgb.shape[1], x+100), (colour+2)%3])
+            print(max(0, y-1),min(inv_rgb.shape[0], y+1), max(0, x-50),min(inv_rgb.shape[1], x+50), pxl, np.average(inv_rgb[y, max(0, x-50):min(inv_rgb.shape[1], x+50), colour]), np.average(inv_rgb[y, max(0, x-50):min(inv_rgb.shape[1], x+50), (colour+1)%3]), np.average(inv_rgb[y, max(0, x-100):min(inv_rgb.shape[1], x+100), (colour+2)%3]))
+            if pxl > 120:
                 down_line[column//shape[1]] = np.array([x,y])
                 end = True
             y+=1
@@ -93,6 +96,7 @@ def find_real_corners(corners, shape, colour):
     down_line = down_line[~np.all(down_line == 0, axis=1)]
     print(left_line)
     print(up_line)
+    print(down_line)
     print(get_linear_intersection(left_line, up_line))
     return (get_linear_intersection(left_line, up_line), get_linear_intersection(left_line, down_line), get_linear_intersection(right_line, up_line), get_linear_intersection(right_line, down_line))
     
@@ -108,11 +112,11 @@ for y in range(0, h, n):
         green_sum = np.sum(block[:, :, 1])
         blue_sum = np.sum(block[:, :, 0])
         # If green > red + blue, keep the block; else, set block to black
-        if red_sum > (green_sum + blue_sum)*0.7:
+        if red_sum > (green_sum + blue_sum)*0.55:
             output_image[0, max(round(y-n*0.3), 0):min(round(y+n*1.3), h), max(round(x-n*0.3), 0):min(round(x+n*1.3), w)] = image_array[max(round(y-n*0.3), 0):min(round(y+n*1.3), h), max(round(x-n*0.3), 0):min(round(x+n*1.3), w)]
-        if green_sum > (red_sum + blue_sum)*0.7:
+        if green_sum > (red_sum + blue_sum)*0.75:
             output_image[1, max(round(y-n*0.3), 0):min(round(y+n*1.3), h), max(round(x-n*0.3), 0):min(round(x+n*1.3), w)] = image_array[max(round(y-n*0.3), 0):min(round(y+n*1.3), h), max(round(x-n*0.3), 0):min(round(x+n*1.3), w)]
-        if blue_sum > (green_sum + red_sum)*0.7:
+        if blue_sum > (green_sum + red_sum)*0.75:
             output_image[2, max(round(y-n*0.3), 0):min(round(y+n*1.3), h), max(round(x-n*0.3), 0):min(round(x+n*1.3), w)] = image_array[max(round(y-n*0.3), 0):min(round(y+n*1.3), h), max(round(x-n*0.3), 0):min(round(x+n*1.3), w)]
 
 gray_r = output_image[0,..., 0]  
@@ -136,29 +140,37 @@ for i, arr in enumerate(combined_gray):
         mask = np.zeros_like(arr)
         # Get bounding rect of the largest contour
         x, y, w, h = cv2.boundingRect(largest_contour)
-        x = x+round(w*0.25)
-        y = y+round(h*0.25)
-        w = round(w*0.5)
-        h = round(h*0.5)
-        cv2.drawContours(mask, [largest_contour], -1, 255, -1)
+        # Optionally pad the bounding rectangle so we include the whole rectangular area around the contour
+        pad = max(5, int(max(w, h) * 0.05))  # 5 px or 5% of the larger dimension
+        x0 = max(0, x - pad)
+        y0 = max(0, y - pad)
+        x1 = min(arr.shape[1], x + w + pad)
+        y1 = min(arr.shape[0], y + h + pad)
+
+        # Fill the mask with the full padded rectangle (not the original contour shape)
+        mask[y0:y1, x0:x1] = 255
+
+        # Update bounding box to the padded rectangle so downstream code uses the full area
+        x, y, w, h = x0, y0, x1 - x0, y1 - y0
         roi = np.zeros_like(arr)
         roi[y:y+h, x:x+w] = arr[y:y+h, x:x+w]
         # roi = arr[y:y+h, x:x+w]
-        # plt.imshow(roi, cmap='gray')
-        # plt.axis('off')
-        # plt.title('3D Pose Reprojection Check')
-        # plt.show()
+        plt.imshow(roi, cmap='gray')
+        plt.axis('off')
+        plt.title('3D Pose Reprojection Check')
+        plt.show()
         # Define chessboard size (adjust as needed)
-        chessboard_size = (20, 20)
+        chessboard_size = (16, 8)
         ret, corners = cv2.findChessboardCorners(roi, chessboard_size, None)
         while not ret:
-            if chessboard_size[1] < 7:
-                chessboard_size = (chessboard_size[0]-1, 20)
+            print(chessboard_size)
+            if chessboard_size[1] < 4:
+                chessboard_size = (chessboard_size[0]-1, 8)
             else:
                 chessboard_size = (chessboard_size[0], chessboard_size[1]-1)
 
             # Find chessboard corners in the ROI
-            if (chessboard_size[0]) < 7:
+            if (chessboard_size[0]) < 4:
                 break
             ret, corners = cv2.findChessboardCorners(roi, chessboard_size, None)
 
@@ -175,16 +187,16 @@ for i, arr in enumerate(combined_gray):
             # Define chessboard size (adjust as needed)
             # Draw blue border around the bounding box of the chessboard
             inv_rgb = cv2.cvtColor(temp, cv2.COLOR_BGR2RGB)
-            points = find_real_corners(corners, chessboard_size, i)
-            for i in points:
-                print(i)
-                # draw point on temp (convert to integer pixel coords and clamp to image bounds)
-                h_t, w_t = temp.shape[:2]
-                x_pt = int(round(i[0]))
-                y_pt = int(round(i[1]))
-                x_pt = max(0, min(w_t - 1, x_pt))
-                y_pt = max(0, min(h_t - 1, y_pt))
-                cv2.circle(temp, (x_pt, y_pt), 6, (0, 255, 0), -1)
+            # points = find_real_corners(corners, chessboard_size, i)
+            # for i in points:
+            #     print(i)
+            #     # draw point on temp (convert to integer pixel coords and clamp to image bounds)
+            #     h_t, w_t = temp.shape[:2]
+            #     x_pt = int(round(i[0]))
+            #     y_pt = int(round(i[1]))
+            #     x_pt = max(0, min(w_t - 1, x_pt))
+            #     y_pt = max(0, min(h_t - 1, y_pt))
+            #     cv2.circle(temp, (x_pt, y_pt), 6, (0, 255, 0), -1)
             # Invert colours (and convert BGR->RGB for matplotlib)
             plt.imshow(inv_rgb)
             plt.axis('off')

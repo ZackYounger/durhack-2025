@@ -28,7 +28,8 @@ def parse_color(s):
         return pygame.Color('black')
 
 def main(colour_input="000000"):
-    ppcm = int(input("Enter dpi:   "))
+    # ppcm = int(input("Enter dpi:   "))
+    ppcm = 40
     parser = argparse.ArgumentParser(description="1 cm checkerboard with colored border (Pygame).")
     parser.add_argument("--color", "-c", help="Border and one checker color (name or #RRGGBB). If omitted you'll be prompted.")
     args = parser.parse_args()
@@ -54,7 +55,7 @@ def main(colour_input="000000"):
     pygame.display.set_caption("1 cm Checkerboard (Pygame)")
 
     chosen_color = parse_color(colour_input)
-    white = pygame.Color(255, 255, 255)
+    white = pygame.Color(0, 0, 255)
 
     print(ppcm)
     border_px = ppcm
@@ -74,16 +75,22 @@ def main(colour_input="000000"):
             pygame.display.flip()
             return
 
-        cols = math.ceil(inner_w / square)
-        rows = math.ceil(inner_h / square)
+        cols = 15
+        rows = 6
+        board_w = cols * square
+        board_h = rows * square
 
-        for r in range(rows):
-            y0 = inner_y + r * square
-            for c in range(cols):
-                x0 = inner_x + c * square
-                color = chosen_color if (r + c) % 2 == 0 else white
-                rect = pygame.Rect(x0, y0, square, square)
-                pygame.draw.rect(screen, color, rect)
+        # Center the checkerboard in the inner area
+        offset_x = inner_x 
+        offset_y = inner_y 
+
+        # for r in range(rows):
+        #     y0 = offset_y + r * square
+        #     for c in range(cols):
+        #         x0 = offset_x + c * square
+        #         color = chosen_color if (r + c) % 2 == 0 else white
+        #         rect = pygame.Rect(x0, y0, square, square)
+                # pygame.draw.rect(screen, color, rect)
 
         pygame.display.flip()
 
