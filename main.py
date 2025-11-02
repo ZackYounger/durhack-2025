@@ -9,6 +9,7 @@ import json
 from Menu.main_menu import main_menu_loop
 from Menu.host_menu import lobby_menu_loop
 from Menu.join_menu import join_menu_loop
+from Menu.viewer import run_viewer
 from game.main import game_loop
 
 
@@ -63,8 +64,14 @@ def main():
                 continue
 
             if isinstance(result, tuple) and result and result[0] == "connect":
-                _, ip, port = result
-                print(f"Should connect to {ip}:{port} - Not Implemented")
+                _, ip, port_str = result
+                try:
+                    port = int(port_str)
+                    run_viewer(host=ip, port=port)
+                except ValueError:
+                    print(f"Invalid port: {port_str}. Must be a number.")
+                except Exception as e:
+                    print(f"Failed to connect to {ip}:{port_str}: {e}")
 
                 continue
 
