@@ -153,6 +153,12 @@ class StreamGame:
                     pass
 
 def game_loop(screen, is_streaming=False, controllers={}):
+    streamer = None
+    if is_streaming:
+        streamer = StreamGame(port=9999)
+        streamer.start_server()
+        print("[Game] Streaming server started on port 9999.")
+
     WIDTH, HEIGHT = screen.get_size()
     FPS = 60
     clock = pygame.time.Clock()
