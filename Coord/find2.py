@@ -3,10 +3,10 @@ import numpy as np
 from collections import defaultdict
 import matplotlib.pyplot as plt
 from dspace import compute_board_pose
-from ransac import fit
+from ransac import fit2, _fit_line, stupid_fit
 
 # Read image from file path
-image_path = "lule.jpg"  # Change this to your image path
+image_path = "test.jpg"  # Change this to your image path
 image = cv2.imread(image_path)
 
 # Convert to NumPy array (cv2.imread already returns a NumPy array)
@@ -36,9 +36,10 @@ def getcorners(colour):
                 meanx += x + n/2
                 meany += y + n/2
                 counter += 1
+    if counter == 0:
+        return 0
     edges = [[] for i in range(4)]
     meanx, meany = int(meanx/counter), int(meany/counter)
-    print(meanx, meany)
 
     for i in range(6):
         y = n + meany - int(i * n / 3)
@@ -63,7 +64,6 @@ def getcorners(colour):
         x = n + meanx - int(i * n / 3)
         while y >= 0:
             if np.average(image_array[y, leeway_w(x, -n*0.5):leeway_w(x+n, n*0.5), colour]) <  np.average(image_array[y, leeway_w(x, -n*0.5):leeway_w(x+n, n*0.5),(colour + 1) % 3]) + np.average(image_array[y, leeway_w(x, -n*0.5):leeway_w(x+n, n*0.5),(colour + 2) % 3]):
-                # print(0.3*np.average(image_array[y, leeway_w(x, -n*0.5):leeway_w(x+n, n*0.5), colour]), np.average(image_array[y, leeway_w(x, -n*0.5):leeway_w(x+n, n*0.5),(colour + 1) % 3]) + np.average(image_array[y, leeway_w(x, -n*0.5):leeway_w(x+n, n*0.5),(colour + 2) % 3]))
                 edges[2].append(((x, y)))
                 break
             y -= 1
@@ -76,45 +76,57 @@ def getcorners(colour):
                 edges[3].append(((x, y)))
                 break
             y += 1
-    print(edges)
     for i in edges:
         for p in i:
-            cv2.circle(new_img, p, radius=20, color=(255, 255, 255), thickness=3)
+            cv2.circle(image_array, p, radius=20, color=(255, 255, 255), thickness=3)
     coefficients = []
     edges2 = []
-    edges2.append(edges[2])
+
     edges2.append(edges[1])
     edges2.append(edges[3])
     edges2.append(edges[0])
+    edges2.append(edges[2])
     temp = np.array(edges2)
     
     for m in range(4):
-        best_model = fit(temp[m,:,0], temp[m,:,1]) # Fit a line to the points
-        slope, intercept = best_model          # Get the slope and intercept of the line
-        coefficients.append((slope, intercept))
+        # best_model = fit2(temp[m,:,0], temp[m,:,1], 'y') if m % 2 == 0 else  fit2(temp[m,:,0], temp[m,:,1], 'x')
+        best_model = stupid_fit(temp[m,:,0], temp[m,:,1], )
+        coefficients.append(best_model)
 
-
-    # Calculate the intersection of the lines
-    intersections = []
-    for f in range(2):
-        for v in range(2):
-            x = (coefficients[v * 2][1] -
-                coefficients[f * 2 + 1][1]) / (coefficients[f * 2 + 1][0] -
-                coefficients[v * 2][0])
-            y = coefficients[f * 2 + 1][0] * x + coefficients[f * 2 + 1][1]
-            intersections.append((round(x), round(y)))
     for i in range(4):
-        for i in range(4):
-            p1 = tuple(map(int, intersections[i]))
-            p2 = tuple(map(int, intersections[(i + 1) % 4]))
-            cv2.line(image_array, p1, p2, color=(255, 255, 255), thickness=3)
-            # cv2.circle(image_array, p1, radius=6, color=(0, 0, 255), thickness=-1)
-    cv2.circle(image_array, (meanx, meany), radius=20, color=(255, 255, 255), thickness=3)
-    print(intersections)
-    print(coefficients)
-    plt.imshow(image_array)
-    plt.axis('off')
-    plt.title('3D Pose Reprojection Check')
-    plt.show()
+        if coefficients[i][0] == 'x':
+            cv2.line(image_array, (int(coefficients[i][1]), 0), (int(coefficients[i][1]), h), color=(255, 255, 255), thickness=3)
+        if coefficients[i][0] == 'y':
+            cv2.line(image_array, (0, int(coefficients[i][1])), (w, int(coefficients[i][1])), color=(255, 255, 255), thickness=3)
+    
+    x_vals = [c for s, c in coefficients if s == 'x']
+    y_vals = [c for s, c in coefficients if s == 'y']
 
-getcorners(2)
+    coords = [(int(x), int(y)) for x in x_vals for y in y_vals]
+    return coords
+
+red = getcorners(2)
+green = getcorners(1)
+blue = getcorners(0)
+origin = red[0]
+
+if red:
+    for i in red:
+        i = (i[0] - origin[0], i[1] - origin[1])
+    
+if green:
+    for i in green:
+        i = (i[0] - origin[0], i[1] - origin[1])
+
+if blue:
+    for i in blue:
+        i = (i[0] - origin[0], i[1] - origin[1])
+
+def coords():
+    return {
+        'red': red,
+        'green': green,
+        'blue': blue,
+    }
+
+# print(coords())

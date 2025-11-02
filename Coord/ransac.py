@@ -1,5 +1,6 @@
 
 import numpy as np
+from random import randint
 
 MAX_TRIALS = 100           # Number of iterations
 RESIDUAL_THRESHOLD = 0.85  # Threshold to determine inliers
@@ -36,6 +37,31 @@ def fit(x, y):
             best_model = line_model
     return best_model
 
+def fit2(x, y, name):
+    newx = []
+    newy = []
+    if name == 'x':
+        values, counts = np.unique(x, return_counts=True)
+        median = values[np.argmax(counts)]
+        mean = np.average(x)
+        overall = np.average((mean, median))
+        for i, c in enumerate(x):
+            if np.abs(c - overall) <= 4:
+                newx.append(c)
+                newy.append(y[i])
+    if name == 'y':
+        values, counts = np.unique(y, return_counts=True)
+        median = values[np.argmax(counts)]
+        mean = np.average(y)
+        overall = np.average((mean, median))
+        for i, c in enumerate(y):
+            if np.abs(c - overall) <= 4:
+                newx.append(c)
+                newy.append(x[i])
+    if len(newy) <= 1 or len(newy) <= 1:
+        return fit(x, y)
+    return fit(newx, newy)
+
 
 def _fit_line(x, y):
     """
@@ -46,6 +72,41 @@ def _fit_line(x, y):
     m, c = np.linalg.lstsq(x_coordinates, y, rcond=None)[0]
     return m, c
 
+def stupid_fit(x, y):
+    mlist = np.zeros(250)
+    clist = np.zeros(250)
+    for i in range(250):
+        r1 = randint(0, x.shape[0]-1)
+        r2 = randint(0, x.shape[0]-1)
+        while r1 == r2:
+            r2 = randint(0, x.shape[0]-1)
+        x1 = x[r1]
+        x2 = x[r2]
+        y1 = y[r1]
+        y2 = y[r2]
+        if x1 == x2:
+            return ('x', x1)
+        if y1 == y2:
+            return ('y', y1)
+        # c = (x2*y1 - x1*y2) / (x2-x1)
+        # m = (y1-y2) / (x1-x2)
+        # mlist[i] = m
+        # clist[i] = c
+    
+    values, counts = np.unique(x, return_counts=True)
+    median = values[np.argmax(counts)]
+    mean = np.average(x)
+    moverall = np.average((mean, median))
+    values, counts = np.unique(y, return_counts=True)
+    median = values[np.argmax(counts)]
+    mean = np.average(y)
+    coverall = np.average((mean, median))
+
+    IQR = np.nanpercentile(x, 75) - np.nanpercentile(x, 25) 
+    IQRy = np.nanpercentile(y, 75) - np.nanpercentile(y, 25) 
+    if IQRy > IQR:
+        return ('x', moverall)
+    return ('y', coverall)
 
 def calculate_residuals(x, y, model):
     """
