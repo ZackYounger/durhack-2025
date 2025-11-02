@@ -7,9 +7,12 @@ WIDTH = 720
 HEIGHT = 480
 FPS = 60
 
-## initialize pygame and create window
+## initialize pygame and create window (use fullscreen)
 pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+info = pygame.display.Info()
+# use the actual display resolution for fullscreen
+WIDTH, HEIGHT = info.current_w, info.current_h
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
 pygame.display.set_caption("schlingo")
 clock = pygame.time.Clock()     ## For syncing the FPS
 

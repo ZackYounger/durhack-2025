@@ -178,7 +178,7 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 # if streamer:
                 #     streamer.stop_server()
-                return "back"
+                return "back", None
 
             # Buttons
             if add_player_btn.is_clicked(event):
@@ -192,7 +192,14 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
                 # Stop lobby stream so game.py can take over the same port
                 # if streamer:
                 #     streamer.stop_server()
-                return "start"
+                
+                # Return controller data along with the result
+                controller_data = {
+                    'players': players,
+                    'joystick_ids': list(connected_joysticks.keys()),
+                    'joystick_names': [js.get_name() for js in connected_joysticks.values()]
+                }
+                return "start", controller_data
 
 
             # Controller hotplug

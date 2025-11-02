@@ -2,6 +2,7 @@ import sys
 import pygame
 import os
 import subprocess
+import json
 
 
 # Import your screens
@@ -57,26 +58,33 @@ def main():
 
         # ---------- HOST / LOBBY ----------
         if choice == "host":
-            result = lobby_menu_loop(port=9999)   # choose your port
-            # proc = run_subprocess("game.py", "--stream")
-            # print(f"[Host] Started game.py (PID {proc.pid}) with streaming on port 9999.")
-            
+            # lobby_menu_loop returns a tuple: (result, controller_data)
+            result, controller_data = lobby_menu_loop(port=9999)   # choose your port
+
             if result == "start":
                 try:
                     pygame.display.quit()
                 except Exception as e:
                     print("Error")
 
+                # Ensure controller_data is a dict
+                if controller_data is None:
+                    controller_data = {}
 
-                proc = run_subprocess("game/main.py", "--stream")  # game.py will stream the actual game
-                print(f"[Host] Started game.py (PID {proc.pid}) with streaming on port 9999.")
+                try:
+                    controllers_json = json.dumps(controller_data)
+                except Exception:
+                    controllers_json = str(controller_data)
+
+                proc = run_subprocess("game/main.py", "--stream", "--controllers", controllers_json)
+                print(f"[Host] Started game.py (PID {proc.pid}) with streaming on port 9999. Controllers: {len(controller_data) if controller_data else 0}")
 
                 try:
                     pygame.display.init()
                     init_display_fullscreen()
                 except Exception as e:
                     print("Error")
-                
+
                 continue
 
             elif result == "back":
