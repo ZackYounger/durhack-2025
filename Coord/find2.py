@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from .ransac import fit2, _fit_line, stupid_fit
 
 # Read image from file path
-image_path = "real.jpg"  # Change this to your image path
+image_path = "Coord/real.jpg"  # Change this to your image path
 image = cv2.imread(image_path)
 
 # Convert to NumPy array (cv2.imread already returns a NumPy array)

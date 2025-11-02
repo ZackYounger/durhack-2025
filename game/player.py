@@ -264,6 +264,7 @@ class Player:
                 self.vel[1] = 0
 
     def draw(self, screen):
+        self._draw_fallback_rectangle(screen)
         # Try to use sprite, fallback to colored rectangle
         player_sprite = self._get_player_sprite()
         

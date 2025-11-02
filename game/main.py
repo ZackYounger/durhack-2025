@@ -219,6 +219,12 @@ def game_loop(screen, is_streaming=False, controllers={}):
     level.create_new_level(screen_rects)
     level_surface = pygame.Surface((level.world_size[0], level.world_size[1]))
 
+    for i in range(len(screen_rects)):
+        screen_rects[i] = [screen_rects[i][0] + level.padding * 0,
+                           screen_rects[i][1] + level.padding* 0,
+                           screen_rects[i][2],
+                           screen_rects[i][3]]
+
     player_instance = player_module.Player(level.start_pos, level.block_width, level.border_walls, "SteamMan")
 
     overview = False
@@ -231,25 +237,22 @@ def game_loop(screen, is_streaming=False, controllers={}):
             if event.type == pygame.QUIT or keys[pygame.K_ESCAPE] or keys[pygame.K_q]:
                 running = False
 
+        level_surface.fill((0, 0, 0))
+
         level.draw(level_surface)
         player_instance.update(tick, keys, gravity)
         player_instance.draw(level_surface)
-
-        # Blit the main game surface to the screen
-        # screen.blit(level_surface, (0, 0))
 
         for colour, rect in zip(colours, screen_rects):
             extracted_surface = level_surface.subsurface(rect)
 
             if is_streaming:
-                if streamer1 and colour == "red":
+                if streamer1 and colour == "blue":
                     streamer1.stream_surface(extracted_surface)
-                    print(extracted_surface.get_size(), screen.get_size())
 
                 if streamer2 and colour == "green":
                     streamer2.stream_surface(extracted_surface)
-                    print(extracted_surface.get_size(), screen.get_size())
-            if colour == "blue":
+            if colour == "red":
                 screen.blit(extracted_surface, (0,0))
 
         pygame.display.flip()
