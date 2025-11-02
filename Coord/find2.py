@@ -1,12 +1,11 @@
 import cv2
 import numpy as np
-from collections import defaultdict
 import matplotlib.pyplot as plt
-from dspace import compute_board_pose
-from ransac import fit2, _fit_line, stupid_fit
+# from dspace import compute_board_pose
+from ransac import stupid_fit
 
 # Read image from file path
-image_path = "test.jpg"  # Change this to your image path
+image_path = "real.jpg"  # Change this to your image path
 image = cv2.imread(image_path)
 
 # Convert to NumPy array (cv2.imread already returns a NumPy array)
@@ -112,8 +111,16 @@ origin = red[0]
 
 if red:
     red.sort()
+    if len(red) > 1:
+        # # draw polyline through the red points and close the loop
+        # pts = [ (int(x), int(y)) for x,y in red ]
+        # for i in range(len(pts)):
+        #     p1 = pts[i]
+        #     p2 = pts[(i+1) % len(pts)]
+        #     cv2.line(image_array, p1, p2, color=(0,0,255), thickness=2)
     for i in range(len(red)):
         red[i] = (red[i][0] - origin[0], red[i][1] - origin[1])
+
     
 if green:
     green.sort()
@@ -132,4 +139,4 @@ def coords():
         'blue': blue,
     }
 
-print(coords())
+# print(coords())
