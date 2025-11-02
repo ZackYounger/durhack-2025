@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from .ransac import fit2, _fit_line, stupid_fit
 
 # Read image from file path
-image_path = "Coord/test.jpg"  # Change this to your image path
+image_path = "real.jpg"  # Change this to your image path
 image = cv2.imread(image_path)
 
 # Convert to NumPy array (cv2.imread already returns a NumPy array)
@@ -36,6 +36,15 @@ def getcorners(colour):
                 counter += 1
     if counter == 0:
         return 0
+    # try:
+    #     cv2.imshow('new_img', new_img)
+    #     cv2.waitKey(0)
+    #     cv2.destroyAllWindows()
+    # except Exception:
+    #     plt.figure(figsize=(8, 6))
+    #     plt.imshow(cv2.cvtColor(new_img, cv2.COLOR_BGR2RGB))
+    #     plt.axis('off')
+    #     plt.show()
     edges = [[] for i in range(4)]
     meanx, meany = int(meanx/counter), int(meany/counter)
 
@@ -102,34 +111,41 @@ def getcorners(colour):
 
     coords = [[int(x), int(y)] for x in x_vals for y in y_vals]
     return coords
-
 red = sorted(getcorners(2))
 green = getcorners(1)
 blue = getcorners(0)
 origin = red[0]
+res = -1536 / (green[3][0] - green[0][0])
 
 if red:
     red.sort()
-    # if len(red) > 1:
-        # # draw polyline through the red points and close the loop
-        # pts = [ (int(x), int(y)) for x,y in red ]
-        # for i in range(len(pts)):
-        #     p1 = pts[i]
-        #     p2 = pts[(i+1) % len(pts)]
-        #     cv2.line(image_array, p1, p2, color=(0,0,255), thickness=2)
+    if len(red) > 1:
+        # draw polyline through the red points and close the loop
+        pts = [ (int(x), int(y)) for x,y in red ]
+        for i in range(len(pts)):
+            p1 = pts[i]
+            p2 = pts[(i+1) % len(pts)]
+            cv2.line(image_array, p1, p2, color=(0,0,255), thickness=2)
     for i in range(len(red)):
-        red[i] = (red[i][0] - origin[0], red[i][1] - origin[1])
+        red[i] = ((red[i][0] - origin[0]) *res, (red[i][1] - origin[1])*res)
 
     
 if green:
     green.sort()
+    # if len(green) > 1:
+    #     # draw polyline through the red points and close the loop
+    #     pts = [ (int(x), int(y)) for x,y in red ]
+    #     for i in range(len(pts)):
+    #         p1 = pts[i]
+    #         p2 = pts[(i+1) % len(pts)]
+    #         cv2.line(image_array, p1, p2, color=(0,0,255), thickness=2)
     for i in range(len(green)):
-        green[i] = (green[i][0] - origin[0], green[i][1] - origin[1])
+        green[i] = ((green[i][0] - origin[0])*res, (green[i][1] - origin[1])*res)
 
 if blue:
     blue.sort()
     for i in range(len(blue)):
-        blue[i] = (blue[i][0] - origin[0], blue[i][1] - origin[1])
+        blue[i] = ((blue[i][0] - origin[0])*res, (blue[i][1] - origin[1])*res)
 
 def coords():
     return {
