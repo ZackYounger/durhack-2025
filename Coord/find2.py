@@ -102,25 +102,28 @@ def getcorners(colour):
     x_vals = [c for s, c in coefficients if s == 'x']
     y_vals = [c for s, c in coefficients if s == 'y']
 
-    coords = [(int(x), int(y)) for x in x_vals for y in y_vals]
+    coords = [[int(x), int(y)] for x in x_vals for y in y_vals]
     return coords
 
-red = getcorners(2)
+red = sorted(getcorners(2))
 green = getcorners(1)
 blue = getcorners(0)
 origin = red[0]
 
 if red:
-    for i in red:
-        i = (i[0] - origin[0], i[1] - origin[1])
+    red.sort()
+    for i in range(len(red)):
+        red[i] = (red[i][0] - origin[0], red[i][1] - origin[1])
     
 if green:
-    for i in green:
-        i = (i[0] - origin[0], i[1] - origin[1])
+    green.sort()
+    for i in range(len(green)):
+        green[i] = (green[i][0] - origin[0], green[i][1] - origin[1])
 
 if blue:
-    for i in blue:
-        i = (i[0] - origin[0], i[1] - origin[1])
+    blue.sort()
+    for i in range(len(blue)):
+        blue[i] = (blue[i][0] - origin[0], blue[i][1] - origin[1])
 
 def coords():
     return {
@@ -129,4 +132,4 @@ def coords():
         'blue': blue,
     }
 
-# print(coords())
+print(coords())
