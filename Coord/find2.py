@@ -110,7 +110,7 @@ origin = red[0]
 
 if red:
     red.sort()
-    if len(red) > 1:
+    # if len(red) > 1:
         # # draw polyline through the red points and close the loop
         # pts = [ (int(x), int(y)) for x,y in red ]
         # for i in range(len(pts)):
