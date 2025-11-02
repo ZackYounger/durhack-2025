@@ -1,7 +1,7 @@
 import pygame
 import os
 
-from helpers import add_vecs, mult_vec_float
+from .helpers import add_vecs, mult_vec_float
 
 epsilon = 5
 
