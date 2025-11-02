@@ -6,14 +6,14 @@ import sys
 import json
 import subprocess
 import os
+from Menu.stream_game import StreamGame
+from typing import List
+from Coord.find2 import coords
 import socket
 import struct
 import threading
 import time
 import zlib
-from typing import List
-from Coord.find2 import coords
-
 
 _HEADER_FMT = "!III"   # width, height, payload_len (u32, network byte order)
 _HEADER_SIZE = struct.calcsize(_HEADER_FMT)
@@ -153,16 +153,6 @@ class StreamGame:
                     pass
 
 def game_loop(screen, is_streaming=False, controllers={}):
-    streamer = None
-    if is_streaming:
-        streamer = StreamGame(port=9999)
-        streamer.start_server()
-        print("[Game] Streaming server started on port 9999.")
-
-    WIDTH, HEIGHT = screen.get_size()
-    FPS = 60
-    clock = pygame.time.Clock()
-
     streamer1 = None
     streamer2 = None
     if is_streaming:
@@ -173,6 +163,10 @@ def game_loop(screen, is_streaming=False, controllers={}):
         streamer2 = StreamGame(port=10000)
         streamer2.start_server()
         print("[Game] Streaming server 2 started on port 10000.")
+
+    WIDTH, HEIGHT = screen.get_size()
+    FPS = 60
+    clock = pygame.time.Clock()
 
     def corners_to_pygame_rect(corner1, corner2, corner3, corner4):
         """
