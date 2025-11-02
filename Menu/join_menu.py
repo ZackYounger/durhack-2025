@@ -1,7 +1,7 @@
 import pygame
 import sys
-from button import Button
-from text_field import TextField
+from Menu.button import Button
+from Menu.text_field import TextField
 
 pygame.init()
 

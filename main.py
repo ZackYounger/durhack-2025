@@ -2,12 +2,13 @@ import sys
 import pygame
 import os
 import subprocess
+import json
 
 
 # Import your screens
-from main_menu import main_menu_loop
-from host_menu import lobby_menu_loop
-from join_menu import join_menu_loop
+from Menu.main_menu import main_menu_loop
+from Menu.host_menu import lobby_menu_loop
+from Menu.join_menu import join_menu_loop
 
 
 def init_display_fullscreen():
@@ -31,6 +32,7 @@ def run_subprocess(script_name, *args):
     cmd = [sys.executable, script_path, *map(str, args)]
 
     # On Windows, you can add a new console window if you want:
+    # gross
     creationflags = 0
     if os.name == "nt":
         # Uncomment if you want a new console for each subprocess:
@@ -56,25 +58,33 @@ def main():
 
         # ---------- HOST / LOBBY ----------
         if choice == "host":
-            result = lobby_menu_loop(port=9999)   # choose your port
-            # proc = run_subprocess("game.py", "--stream")
-            # print(f"[Host] Started game.py (PID {proc.pid}) with streaming on port 9999.")
-            
+            # lobby_menu_loop returns a tuple: (result, controller_data)
+            result, controller_data = lobby_menu_loop(port=9999)   # choose your port
+
             if result == "start":
                 try:
                     pygame.display.quit()
                 except Exception as e:
                     print("Error")
 
+                # Ensure controller_data is a dict
+                if controller_data is None:
+                    controller_data = {}
 
-                proc = run_subprocess("game.py", "--stream")  # game.py will stream the actual game
-                print(f"[Host] Started game.py (PID {proc.pid}) with streaming on port 9999.")
+                try:
+                    controllers_json = json.dumps(controller_data)
+                except Exception:
+                    controllers_json = str(controller_data)
+
+                proc = run_subprocess("game/main.py", "--stream", "--controllers", controllers_json)
+                print(f"[Host] Started game.py (PID {proc.pid}) with streaming on port 9999. Controllers: {len(controller_data) if controller_data else 0}")
 
                 try:
                     pygame.display.init()
                     init_display_fullscreen()
                 except Exception as e:
                     print("Error")
+
                 continue
 
             elif result == "back":
@@ -85,42 +95,28 @@ def main():
         elif choice == "join":
             result = join_menu_loop()
             if result == "back":
-                # Back to main menu
                 continue
+
             if isinstance(result, tuple) and result and result[0] == "connect":
                 _, ip, port = result
-                # TODO: Start your client connection here
+                print("[Main] Launching viewer fullscreen…", flush=True)
+
+                try:
+                    pygame.display.quit()
+                except Exception as e:
+                    print(f"[Main] display.quit error: {e}", flush=True)
+
                 proc = run_subprocess("viewer.py", "--host", ip, "--port", port)
-                print(f"[Join] Started viewer.py (PID {proc.pid}) for {ip}:{port}.")
-                # After attempting connection, you can go to gameplay or back to main:
-                # run_placeholder_gameplay(screen, clock)
+                if proc:
+                    print(f"[Join] Started viewer.py (PID {proc.pid}) for {ip}:{port}.", flush=True)
+                else:
+                    print("[Join] Failed to start viewer.py", flush=True)
+
                 continue
+
 
         # Safety: cap loop tick
         clock.tick(60)
-
-# def run_placeholder_gameplay(screen, clock):
-#     """Tiny placeholder so you can see a 'game' screen after Start.
-#     - ESC returns to main menu.
-#     """
-#     WHITE = (255, 255, 255)
-#     BLACK = (0, 0, 0)
-#     font = pygame.font.SysFont(None, 72)
-#     w, h = screen.get_size()
-
-#     while True:
-#         for event in pygame.event.get():
-#             if event.type == pygame.QUIT:
-#                 pygame.quit(); sys.exit()
-#             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-#                 return  # leave gameplay → main loop resumes at main menu
-
-#         screen.fill(BLACK)
-#         label = font.render("Gameplay placeholder — press ESC to return", True, WHITE)
-#         rect = label.get_rect(center=(w // 2, h // 2))
-#         screen.blit(label, rect)
-#         pygame.display.flip()
-#         clock.tick(60)
 
 if __name__ == "__main__":
     try:

@@ -1,10 +1,10 @@
 import pygame
 import sys
 import socket
-from button import Button
+from Menu.button import Button
 
-import time
-from stream_game import StreamGame
+# import time
+# from stream_game import StreamGame
 
 pygame.init()
 
@@ -21,7 +21,7 @@ WIDTH, HEIGHT = screen.get_size()
 pygame.display.set_caption("Lobby")
 
 
-streamer: StreamGame | None = None
+# streamer: StreamGame | None = None
 
 # ---------- Fonts & Colours ----------
 TITLE_FONT = pygame.font.SysFont(None, 80)
@@ -120,9 +120,9 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
     host_ip = _get_local_ip()
     host_port = port
 
-    if streamer is None:
-        streamer = StreamGame(host=host_ip, port=host_port, max_clients=3, target_fps=60)
-        streamer.start_server()
+    # if streamer is None:
+    #     streamer = StreamGame(host=host_ip, port=host_port, max_clients=3, target_fps=60)
+    #     streamer.start_server()
 
     # Buttons
     add_player_btn = Button(
@@ -176,9 +176,9 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
 
             # Esc → back to main menu
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                if streamer:
-                    streamer.stop_server()
-                return "back"
+                # if streamer:
+                #     streamer.stop_server()
+                return "back", None
 
             # Buttons
             if add_player_btn.is_clicked(event):
@@ -190,9 +190,16 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
             if start_btn.is_clicked(event):
                 print("start button is clicked")
                 # Stop lobby stream so game.py can take over the same port
-                if streamer:
-                    streamer.stop_server()
-                return "start"
+                # if streamer:
+                #     streamer.stop_server()
+                
+                # Return controller data along with the result
+                controller_data = {
+                    'players': players,
+                    'joystick_ids': list(connected_joysticks.keys()),
+                    'joystick_names': [js.get_name() for js in connected_joysticks.values()]
+                }
+                return "start", controller_data
 
 
             # Controller hotplug
@@ -215,8 +222,8 @@ def lobby_menu_loop(port: int = DEFAULT_PORT):
 
         _draw_lobby(host_ip, host_port, add_player_btn, start_btn, players, awaiting_controller)
 
-        if streamer:
-            streamer.stream_surface(screen)
+        # if streamer:
+        #     streamer.stream_surface(screen)
         
         clock.tick(60)
 

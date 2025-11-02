@@ -8,7 +8,7 @@ import zlib
 import pygame
 
 _HEADER_FMT = "!III"   # width, height, payload_len
-_HEADER_SIZE = struct.calcsize(_HEADER_FMT)
+_HEADER_SIZE = struct.calcsize(_HEADER_FMT) 
 
 def _recv_exact(sock: socket.socket, n: int) -> bytes:
     buf = bytearray()
@@ -21,34 +21,67 @@ def _recv_exact(sock: socket.socket, n: int) -> bytes:
 
 def run_viewer(host: str, port: int, title: str = "StreamGame Viewer") -> None:
     pygame.init()
-    screen = pygame.display.set_mode((960, 540), pygame.RESIZABLE)
+    info = pygame.display.Info()
+    screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
     pygame.display.set_caption(title)
     clock = pygame.time.Clock()
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-    sock.connect((host, port))
 
     running = True
     first_size = True
 
-    while running:
-        try:
-            # Try to connect to host (auto-retry if server is down)
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            sock.connect((host, port))
-            print(f"[Viewer] Connected to {host}:{port}")
+    def draw_waiting():
+        screen.fill((10, 10, 12))
+        font = pygame.font.SysFont(None, 72)
+        small = pygame.font.SysFont(None, 36)
+        msg = font.render("Waiting for host to start…", True, (220, 220, 220))
+        # sub = small.render(f"{host}:{port}. Press ESC to quit", True, (180, 180, 180))
+        rect = msg.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 20))
+        # rect2 = sub.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 40))
+        screen.blit(msg, rect)
+        # screen.blit(sub, rect2)
+        pygame.display.flip()
 
+    while running:
+        # ---- WAIT & CONNECT PHASE ----
+        # show waiting screen and keep trying to connect
+        connected_sock = None
+        while running and connected_sock is None:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    running = False
+
+            draw_waiting()
+
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                sock.settimeout(2.5)  # quick retry cadence
+                sock.connect((host, port))
+                sock.settimeout(None)
+                connected_sock = sock
+                print(f"[Viewer] Connected to {host}:{port}")
+                first_size = True
+            except Exception:
+                pygame.time.delay(500)
+                continue
+
+        if not running:
+            break
+
+        # ---- STREAM PHASE ----
+        try:
             while running:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         running = False
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                        running = False
 
-                # --- Try to receive one frame ---
-                header = _recv_exact(sock, _HEADER_SIZE)
+                header = _recv_exact(connected_sock, _HEADER_SIZE)
                 w, h, payload_len = struct.unpack(_HEADER_FMT, header)
-                payload = _recv_exact(sock, payload_len)
+                payload = _recv_exact(connected_sock, payload_len)
                 raw = zlib.decompress(payload)
 
                 try:
@@ -56,12 +89,10 @@ def run_viewer(host: str, port: int, title: str = "StreamGame Viewer") -> None:
                 except Exception:
                     frame = pygame.image.fromstring(raw, (w, h), "RGB")
 
-                # First frame? Resize viewer window to match stream
+                # Keep fullscreen; first frame just adjusts internal scaling
                 if first_size:
-                    screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
                     first_size = False
 
-                # Scale to window
                 win_w, win_h = screen.get_size()
                 scale = min(win_w / w, win_h / h)
                 disp_w, disp_h = max(1, int(w * scale)), max(1, int(h * scale))
@@ -73,12 +104,15 @@ def run_viewer(host: str, port: int, title: str = "StreamGame Viewer") -> None:
                 clock.tick(120)
 
         except Exception:
-            print("[Viewer] Lost connection... retrying in 0.5s")
-            pygame.time.delay(500)
-            # Loop will retry connection again
+            # Lost connection — loop back to waiting
+            try:
+                connected_sock.close()
+            except Exception:
+                pass
             continue
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Viewer for StreamGame streams.")
