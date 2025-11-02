@@ -1,11 +1,10 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-# from dspace import compute_board_pose
-from ransac import stupid_fit
+from .ransac import fit2, _fit_line, stupid_fit
 
 # Read image from file path
-image_path = "real.jpg"  # Change this to your image path
+image_path = "Coord/test.jpg"  # Change this to your image path
 image = cv2.imread(image_path)
 
 # Convert to NumPy array (cv2.imread already returns a NumPy array)

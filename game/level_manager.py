@@ -1,5 +1,5 @@
 import pygame
-from helpers import add_vecs, mult_vec_float, clamp, lerp
+from .helpers import add_vecs, mult_vec_float, clamp, lerp
 import random
 from networkx import astar
 import os

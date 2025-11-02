@@ -9,6 +9,7 @@ import json
 from Menu.main_menu import main_menu_loop
 from Menu.host_menu import lobby_menu_loop
 from Menu.join_menu import join_menu_loop
+from game.main import game_loop
 
 
 def init_display_fullscreen():
@@ -38,36 +39,17 @@ def main():
             result, controller_data = lobby_menu_loop(port=9999)   # choose your port
 
             if result == "start":
-                try:
-                    pygame.display.quit()
-                except Exception as e:
-                    print("Error")
-
                 # Ensure controller_data is a dict
                 if controller_data is None:
                     controller_data = {}
-
-                try:
-                    controllers_json = json.dumps(controller_data)
-                except Exception:
-                    controllers_json = str(controller_data)
                 
-                here = os.path.dirname(os.path.abspath(__file__))
-                script_path = os.path.join(here, "game/main.py")
-                cmd = [sys.executable, script_path, "--stream", "--controllers", controllers_json]
-                proc = subprocess.Popen(cmd, cwd=here)
-
-                print(f"[Host] Started game.py (PID {proc.pid}) with streaming on port 9999. Controllers: {len(controller_data) if controller_data else 0}")
+                # Clear the screen before starting the game
+                screen.fill((0, 0, 0))
                 
-                # Wait for the game process to finish
-                proc.wait()
-
-                try:
-                    pygame.display.init()
-                    init_display_fullscreen()
-                except Exception as e:
-                    print("Error")
-
+                # Call the game loop directly
+                game_loop(screen, is_streaming=True, controllers=controller_data)
+                
+                # After the game loop returns, we are back in the main menu
                 continue
 
             elif result == "back":
