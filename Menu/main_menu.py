@@ -1,6 +1,6 @@
 import pygame
 import sys
-from button import Button  # Import your reusable Button class
+from Menu.button import Button  # Import your reusable Button class
 
 pygame.init()
 

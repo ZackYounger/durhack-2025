@@ -1,7 +1,7 @@
 import pygame
 import sys
 import socket
-from button import Button
+from Menu.button import Button
 
 # import time
 # from stream_game import StreamGame

@@ -5,9 +5,9 @@ import subprocess
 
 
 # Import your screens
-from main_menu import main_menu_loop
-from host_menu import lobby_menu_loop
-from join_menu import join_menu_loop
+from Menu.main_menu import main_menu_loop
+from Menu.host_menu import lobby_menu_loop
+from Menu.join_menu import join_menu_loop
 
 
 def init_display_fullscreen():
@@ -31,6 +31,7 @@ def run_subprocess(script_name, *args):
     cmd = [sys.executable, script_path, *map(str, args)]
 
     # On Windows, you can add a new console window if you want:
+    # gross
     creationflags = 0
     if os.name == "nt":
         # Uncomment if you want a new console for each subprocess:
@@ -67,7 +68,7 @@ def main():
                     print("Error")
 
 
-                proc = run_subprocess("game.py", "--stream")  # game.py will stream the actual game
+                proc = run_subprocess("game/main.py", "--stream")  # game.py will stream the actual game
                 print(f"[Host] Started game.py (PID {proc.pid}) with streaming on port 9999.")
 
                 try:
@@ -103,38 +104,11 @@ def main():
                 else:
                     print("[Join] Failed to start viewer.py", flush=True)
 
-                # proc.wait()
-                # pygame.display.init()
-                # init_display_fullscreen()
-
                 continue
 
 
         # Safety: cap loop tick
         clock.tick(60)
-
-# def run_placeholder_gameplay(screen, clock):
-#     """Tiny placeholder so you can see a 'game' screen after Start.
-#     - ESC returns to main menu.
-#     """
-#     WHITE = (255, 255, 255)
-#     BLACK = (0, 0, 0)
-#     font = pygame.font.SysFont(None, 72)
-#     w, h = screen.get_size()
-
-#     while True:
-#         for event in pygame.event.get():
-#             if event.type == pygame.QUIT:
-#                 pygame.quit(); sys.exit()
-#             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-#                 return  # leave gameplay → main loop resumes at main menu
-
-#         screen.fill(BLACK)
-#         label = font.render("Gameplay placeholder — press ESC to return", True, WHITE)
-#         rect = label.get_rect(center=(w // 2, h // 2))
-#         screen.blit(label, rect)
-#         pygame.display.flip()
-#         clock.tick(60)
 
 if __name__ == "__main__":
     try:
