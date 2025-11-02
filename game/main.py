@@ -2,6 +2,11 @@ import pygame
 import random
 import level_manager
 import player
+import sys
+from Menu.stream_game import StreamGame
+import json
+import subprocess
+import os
 
 WIDTH = 720
 HEIGHT = 480
@@ -15,6 +20,52 @@ WIDTH, HEIGHT = info.current_w, info.current_h
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
 pygame.display.set_caption("schlingo")
 clock = pygame.time.Clock()     ## For syncing the FPS
+
+def run_subprocess(script_name, *args):
+    """
+    Launch a Python script in a separate process.
+    Returns the Popen object (non-blocking).
+    """
+    # Resolve paths relative to this file
+    here = os.path.dirname(os.path.abspath(__file__))
+    script_path = os.path.join(here, "..", script_name)
+
+    # Use the same Python interpreter that's running this program
+    cmd = [sys.executable, script_path, *map(str, args)]
+
+    # On Windows, you can add a new console window if you want:
+    # gross
+    creationflags = 0
+    if os.name == "nt":
+        # Uncomment if you want a new console for each subprocess:
+        # creationflags = subprocess.CREATE_NEW_CONSOLE
+        pass
+
+    return subprocess.Popen(cmd, cwd=here, creationflags=creationflags)
+
+# -- streaming --
+is_streaming = "--stream" in sys.argv
+streamer = None
+controllers = {}
+if is_streaming:
+    try:
+        controllers_idx = sys.argv.index("--controllers")
+        controllers_json = sys.argv[controllers_idx + 1]
+        controllers = json.loads(controllers_json)
+    except (ValueError, IndexError):
+        pass
+
+    streamer = StreamGame(port=9999, max_clients=len(controllers) or 1)
+    streamer.start_server()
+    print(f"[Game] Streaming server started for {len(controllers)} players.")
+
+    # Launch viewers
+    base_port = 9999
+    for i, controller_id in enumerate(controllers.keys()):
+        port = base_port + i
+        run_subprocess("viewer.py", "--host", "127.0.0.1", "--port", str(port))
+        print(f"[Game] Started viewer for controller {controller_id} on port {port}")
+
 
 gravity = 0.5
 
@@ -52,7 +103,14 @@ while running:
     else:
         screen.blit(level_surface, (-level.padding, -level.padding))
 
+    if is_streaming and streamer:
+        streamer.stream_surface(screen)
 
     pygame.display.flip()       
     tick += 1
+
+if is_streaming and streamer:
+    streamer.stop_server()
+    print("[Game] Streaming server stopped.")
+
 pygame.quit()

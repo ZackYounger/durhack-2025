@@ -15,32 +15,8 @@ def init_display_fullscreen():
     pygame.init()
     info = pygame.display.Info()
     screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
-    pygame.display.set_caption("DurHack 2025")
+    pygame.display.set_caption("schplingus")
     return screen
-
-
-def run_subprocess(script_name, *args):
-    """
-    Launch a Python script in a separate process.
-    Returns the Popen object (non-blocking).
-    """
-    # Resolve paths relative to this file
-    here = os.path.dirname(os.path.abspath(__file__))
-    script_path = os.path.join(here, script_name)
-
-    # Use the same Python interpreter that's running this program
-    cmd = [sys.executable, script_path, *map(str, args)]
-
-    # On Windows, you can add a new console window if you want:
-    # gross
-    creationflags = 0
-    if os.name == "nt":
-        # Uncomment if you want a new console for each subprocess:
-        # creationflags = subprocess.CREATE_NEW_CONSOLE
-        pass
-
-    return subprocess.Popen(cmd, cwd=here, creationflags=creationflags)
-
 
 
 def main():
@@ -75,9 +51,16 @@ def main():
                     controllers_json = json.dumps(controller_data)
                 except Exception:
                     controllers_json = str(controller_data)
+                
+                here = os.path.dirname(os.path.abspath(__file__))
+                script_path = os.path.join(here, "game/main.py")
+                cmd = [sys.executable, script_path, "--stream", "--controllers", controllers_json]
+                proc = subprocess.Popen(cmd, cwd=here)
 
-                proc = run_subprocess("game/main.py", "--stream", "--controllers", controllers_json)
                 print(f"[Host] Started game.py (PID {proc.pid}) with streaming on port 9999. Controllers: {len(controller_data) if controller_data else 0}")
+                
+                # Wait for the game process to finish
+                proc.wait()
 
                 try:
                     pygame.display.init()
@@ -99,18 +82,7 @@ def main():
 
             if isinstance(result, tuple) and result and result[0] == "connect":
                 _, ip, port = result
-                print("[Main] Launching viewer fullscreen…", flush=True)
-
-                try:
-                    pygame.display.quit()
-                except Exception as e:
-                    print(f"[Main] display.quit error: {e}", flush=True)
-
-                proc = run_subprocess("viewer.py", "--host", ip, "--port", port)
-                if proc:
-                    print(f"[Join] Started viewer.py (PID {proc.pid}) for {ip}:{port}.", flush=True)
-                else:
-                    print("[Join] Failed to start viewer.py", flush=True)
+                print(f"Should connect to {ip}:{port} - Not Implemented")
 
                 continue
 
